@@ -116,6 +116,5 @@ class AnnotatedInventory:
         cls._make_directories(cfg)
         i = AnnotatedInventory(work_dir=cfg.workdir)
         cc = CommodoreConfig(work_dir=cfg.workdir)
-        print(cfg.repo)
         i.repo = clone_repository(cfg.repo, i.classes_dir / "global", cc)
         return i
