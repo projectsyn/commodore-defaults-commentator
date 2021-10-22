@@ -1,0 +1,8 @@
+xref:index.adoc[Home]
+
+{% for dist, items in navitems.items() %}
+.{{ dist }}
+{% for title, page in items.items() %}
+* xref:{{ page }}[{{ title }}]
+{% endfor %}
+{% endfor %}

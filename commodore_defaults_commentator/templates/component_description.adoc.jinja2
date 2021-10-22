@@ -1,16 +1,32 @@
-= Components
+= Components for {{ distribution }}/{{ cloud }}{% if region %}/{{ region }}{% endif %}
+
+This page documents the component versions and configured parameters in `{{repo}}` for the following combination of distribution and cloud provider:
+
+* distribution: `{{ distribution }}`
+* cloud: `{{ cloud }}`
+{% if region %}
+* cloud region: `{{ region }}`
+{% endif %}
+
+The documentation uses `t-foo` and `c-bar` for the tenant and cluster IDs respectively.
+
+== Component versions
+
+|====
+{% for cn, cver in component_versions.items() %}
+| {{ cn }} | {{ cver['url'] }} | {% if 'version' in cver %}{{ cver['version'] }}{% else %}--{%endif%} | `{{ cver.uri|strip_prefix(repo_path) }}`
+{% endfor %}
+|====
+
+== Component parameters
+
 {% for component in components %}
-== {{ component.title }}
+=== {{ component.title }}
 {% if component.docu %}
-=== Documentation
 {% for doc in component.docu %}
 {{ doc }}
 {% endfor %}
 {% endif %}
-=== Parameters
 
-[source]
-----
-{{ component.params }}
-----
+{{ component.params|asciidoc_yaml(component.title, repo_path)  }}
 {% endfor %}

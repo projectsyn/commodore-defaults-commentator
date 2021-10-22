@@ -1,0 +1,6 @@
+name: commodore-defaults-commentator
+title: "Project Syn: Commodore global defaults documentation"
+version: master
+start_page: ROOT:index.adoc
+nav:
+- modules/ROOT/nav.adoc
