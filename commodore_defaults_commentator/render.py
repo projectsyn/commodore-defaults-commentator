@@ -16,6 +16,22 @@ from .render_template import render_template, render_jinja
 def _represent_value(dumper, data):
     return dumper.represent_data(data.contents)
 
+def _represent_str(dumper, data):
+    """
+    Custom string rendering when dumping data as YAML.
+
+    Hooking this method into PyYAML with
+
+        yaml.add_representer(str, _represent_str)
+
+    will configure the YAML dumper to render strings which contain newline
+    characters as block scalars with the last newline stripped.
+    """
+    style = None
+    if "\n" in data:
+        style = "|"
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data, style=style)
+
 
 class YamlAnnotator:
     def __init__(self):
@@ -25,6 +41,7 @@ class YamlAnnotator:
     def _dump_yaml(self, data):
         d = yaml.SafeDumper
         d.add_representer(Value, _represent_value)
+        d.add_representer(str, _represent_str)
         y = yaml.dump(data, default_flow_style=False, Dumper=d)
         return list(
             filter(lambda l: l != "..." and l != "", y.split("\n"))
@@ -56,10 +73,14 @@ class YamlAnnotator:
         elif isinstance(data, ParameterList) or isinstance(data, list):
             # TODO: figure out if we can/want to have locations for individual list items
             output_lines.extend(map(lambda l: "  " + l, self._dump_yaml(list(data))))
-        elif isinstance(data, Value):
-            output_lines = [self.annotate_key(key, data, scalar=self._dump_yaml(data.contents)[0])]
         else:
-            output_lines = [self.annotate_key(key, data, scalar=self._dump_yaml(data)[0])]
+            v = data
+            if isinstance(v, Value):
+                v = data.contents
+            v = self._dump_yaml(v)
+            output_lines = [self.annotate_key(key, data, scalar=v[0])]
+            if len(v) > 1:
+                output_lines.extend(v[1:])
         return output_lines
 
     def asciidoc_yaml_block(self, pkey, cparams, repo_path):
