@@ -41,8 +41,11 @@ def commentator(ctx, working_dir):
 @pass_config
 def render(config: Config, defaults_repo: str):
     config.repo = defaults_repo
-    shutil.rmtree("inventory")
+    shutil.rmtree("inventory", ignore_errors=True)
     render_documentation(config)
 
 def main():
     commentator.main(prog_name=prog_name, auto_envvar_prefix="COMMENTATOR")
+
+if __name__ == "__main__":
+    main()

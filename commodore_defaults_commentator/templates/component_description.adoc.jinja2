@@ -1,0 +1,16 @@
+= Components
+{% for component in components %}
+== {{ component.title }}
+{% if component.docu %}
+=== Documentation
+{% for doc in component.docu %}
+{{ doc }}
+{% endfor %}
+{% endif %}
+=== Parameters
+
+[source]
+----
+{{ component.params }}
+----
+{% endfor %}
