@@ -1,5 +1,6 @@
 ## Ignore tool output
 inventory
+docs/modules
 
 
 ## From here: GitHub's gitignore template for Python
