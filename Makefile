@@ -14,6 +14,10 @@ docs-serve:
 	poetry run commodore-defaults-commentator render git@git.vshn.net:syn/commodore-defaults.git
 	$(antora_preview_cmd)
 
+.PHONY: preview
+preview:
+	$(antora_preview_cmd)
+
 .PHONY: docs-vale
 docs-vale:
 	$(vale_cmd)
