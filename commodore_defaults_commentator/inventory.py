@@ -1,10 +1,9 @@
 import os
-import shutil
 
 import yaml
 
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Any
 
 import reclass
 import reclass.core
@@ -22,6 +21,9 @@ from reclass.values.value import Value
 from git import Repo
 
 from . import Config
+
+def value_is_complex(v: Any) -> bool:
+    return isinstance(v, Value) or isinstance(v, ParameterDict) or isinstance(v, ParameterList)
 
 
 class AnnotatedInventory:
@@ -85,24 +87,24 @@ class AnnotatedInventory:
         else:
             raise Exception(f"Cannot unwrap type '{type(val)}'")
 
+    def _inner_simplify_value(self, container, key, value, cururi):
+        newval = self._inner_simplify_param_uris(value)
+        if value_is_complex(value) and type(newval) == type(value):
+            if newval.uri == cururi:
+                newval = self._unwrap(newval)
+        container[key] = newval
+
     def _inner_simplify_param_uris(self, params):
         if isinstance(params, ParameterDict):
             new = ParameterDict(uri=params.uri)
             for key, value in params.items():
-                newval = self._inner_simplify_param_uris(value)
-                if type(newval) == type(value):
-                    if newval.uri == params.uri:
-                        newval = self._unwrap(newval)
-                new[key] = newval
+                self._inner_simplify_value(new, key, value, params.uri)
             return new
         elif isinstance(params, ParameterList):
             new = ParameterList(uri=params.uri)
             for item in params:
-                newitem = self._inner_simplify_param_uris(item)
-                if type(newitem) == type(item):
-                    if newitem.uri == params.uri:
-                        newitem = self._unwrap(newitem)
-                new.append(newitem)
+                new.append(None)
+                self._inner_simplify_value(new, -1, item, params.uri)
             return new
         else:
             return params
