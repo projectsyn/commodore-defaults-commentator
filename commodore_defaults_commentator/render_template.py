@@ -1,34 +1,57 @@
 import copy
 import reclass
 
-from jinja2 import Environment, FileSystemLoader
+from typing import Dict, Callable
 
+from jinja2 import Environment, PackageLoader
+
+from .inventory import AnnotatedInventory
 
 def output(data):
     return reclass.output(data, "yaml", pretty_print=True, complex_params=True)
 
 
-def render_template(dict_data: dict) -> str:
+def prepare_component_data(ckey, cparams):
+    params = copy.deepcopy(cparams)
+    params.pop("_documentation", None)
+    return {
+        "title": ckey,
+        "docu": cparams.get('_documentation', None),
+        "params": params
+    }
+
+def render_template(inventory: AnnotatedInventory, filters: Dict[str, Callable]) -> str:
     components = []
 
-    if not isinstance(dict_data, dict):
-        raise TypeError()
+    component_versions = {}
+    all_component_versions = inventory.parameters(param="components", simplify=False)
 
-    for k, v in dict_data["nodes"]["global"]["parameters"].items():
-        if k == "_reclass_":
-            continue
+    for app in inventory.applications:
+        cn, alias = inventory.parse_app(app)
+        if cn != alias:
+            components.append(prepare_component_data(alias, inventory.parameters(param=alias)))
+        components.append(prepare_component_data(cn, inventory.parameters(param=cn)))
+        component_versions[cn] = all_component_versions[cn]
 
-        params = copy.deepcopy(v)
+    return render_jinja(
+        "component_description.adoc.jinja2",
+        filters,
+        components=components,
+        component_versions=component_versions,
+        distribution=inventory.distribution,
+        cloud=inventory.cloud,
+        region=inventory.region,
+        repo=inventory.repo_url,
+        repo_path=inventory.repo_path,
+    )
 
-        params.pop("_documentation", None)
+def render_jinja(templatename, filters, **kwargs):
+    env = Environment(loader=PackageLoader("commodore_defaults_commentator", "templates"))
+    if filters:
+        for fname, f in filters.items():
+            print(f"Adding filter {fname}")
+            env.filters[fname] = f
 
-        components.append({
-            "title": k,
-            "docu": v.get('_documentation', None),
-            "params": output(params)
-        })
+    tpl = env.get_template(templatename)
 
-    env = Environment(loader=FileSystemLoader("templates"))
-    tpl = env.get_template("component_description.adoc.jinja2")
-
-    return tpl.render(components=components)
+    return tpl.render(**kwargs)
